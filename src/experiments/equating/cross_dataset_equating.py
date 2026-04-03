@@ -1,14 +1,12 @@
 """
-Cross-Dataset Equating Experiment
+Cross-Dataset Equating: data loading, IRT helpers, and validation functions.
 
-For each skill that contains 2+ datasets, run leave-one-out experiments:
-- Each dataset takes turns being the "Link" set
-- The rest are "Base" sets
-- Run IRT training, fixed-anchor calibration, and concurrent calibration
-- Compare Base→Base vs Base→Link prediction accuracy
-
-This validates the core hypothesis: can we predict performance on unseen datasets
-using only ability estimates from other datasets measuring the same skill?
+Provides shared utilities for the chain-linking sweep:
+- Dataset loading and grouping by skill/source
+- IRT training on the base set
+- Anchor selection and fixed-parameter calibration
+- Theta precomputation
+- Validation and baseline routines (random, discriminative)
 """
 
 from __future__ import annotations
