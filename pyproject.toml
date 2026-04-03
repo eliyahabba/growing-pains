@@ -1,0 +1,59 @@
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "llm-eval"
+version = "0.1.0"
+description = "AdaptEval: Modular LLM Evaluation"
+authors = ["AdaptEval Contributors <dev@example.com>"]
+readme = "README.md"
+packages = [{ include = "llm_eval", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+typer = "^0.12.3"
+fastapi = "^0.111.0"
+uvicorn = {version = "^0.30.0", extras = ["standard"]}
+pydantic = "^2.7.0"
+pydantic-settings = "^2.3.0"
+numpy = "^1.26.0"
+pandas = "^2.2.0"
+pyarrow = "^16.0.0"
+PyYAML = "^6.0.0"
+py-irt = {version = "^0.10.0", optional = true}
+pyro-ppl = {version = "^1.9.0", optional = true}
+torch = {version = "^2.2.0", optional = true}
+datasets = {version = "^2.20.0", optional = true}
+tqdm = "^4.66.0"
+scipy = "^1.13.0"
+scikit-learn = "^1.5.0"
+
+jsonlines = "^4.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+httpx = "^0.27.0"
+ruff = "^0.4.8"
+mypy = "^1.10.0"
+types-PyYAML = "^6.0.12"
+
+[tool.poetry.scripts]
+llm-eval = "llm_eval.serving.cli:app"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = false
+
+[tool.poetry.extras]
+irt = ["py-irt", "pyro-ppl", "torch"]
+hf = ["datasets"]
+
+

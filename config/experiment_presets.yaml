@@ -1,0 +1,145 @@
+# Chain Linking Experiment Presets
+# 
+# This file defines named configurations for chain linking experiments.
+# Use with: sbatch run_chain_linking_unified.sh --preset <preset_name>
+
+# Global defaults (can be overridden per preset)
+defaults:
+  seed: 42              # Fixed random seed for reproducibility
+  random_seed: 1000     # Seed for random baseline scenarios
+  dims: [5]             # IRT dimensions
+  epochs: 2000          # Concurrent training epochs
+  epochs_fixed: 1000    # Fixed-anchor training epochs
+  test_ratio: 0.25      # Test set ratio
+  num_workers: 4        # Number of parallel workers
+
+# SLURM resource defaults
+# NOTE: These are documentation only - actual SLURM directives are in the shell script
+# Override at submission time: sbatch --mem=8g --time=24:0:0 script.sh
+slurm_defaults:
+  memory: 16g      # LB and HELM Lite need more memory
+  gpus: 4
+  cpus: 2
+  time: "6:0:0"
+  mail_user: eliya.habba@mail.huji.ac.il
+  mail_type: END,FAIL,TIME_LIMIT
+  
+  # MMLU Fields overrides:
+  # memory: 8g (less memory needed)
+  # time: "24:0:0" (longer runtime)
+
+# Named experiment configurations
+presets:
+  # ============================================================================
+  # Open LLM Leaderboard (LB) - 6 datasets, 395 models
+  # ============================================================================
+  
+  lb_standard:
+    description: "Standard LB experiment with 100 anchors, all models"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 100
+    n_models_per_chain: null  # all models
+    # target_dataset: auto (determined by shuffle_seed)
+    
+  lb_models_100:
+    description: "LB with 100 chain models (reduced from ~297)"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 100
+    n_models_per_chain: 100
+    
+  lb_models_50:
+    description: "LB with 50 chain models"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 100
+    n_models_per_chain: 50
+    
+  lb_anchors_25:
+    description: "LB with 25 anchors per dataset"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 25
+    
+  lb_anchors_50:
+    description: "LB with 50 anchors per dataset"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 50
+    
+  lb_anchors_200:
+    description: "LB with 200 anchors per dataset"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 200
+    
+  lb_epochs_20000:
+    description: "LB with extended training (20000 epochs)"
+    data_source_mode: lb
+    n_base: 1
+    max_chain: 5
+    n_anchors: 100
+    epochs: 20000
+
+  # ============================================================================
+  # HELM Lite - 9 datasets, 91 models
+  # ============================================================================
+  
+  helm_lite_base1:
+    description: "HELM Lite with 1 base dataset, 50 anchors"
+    data_source_mode: helm_lite
+    n_base: 1
+    max_chain: 10
+    n_anchors: 50
+      
+  helm_lite_base4:
+    description: "HELM Lite with 4 base datasets, 25 anchors"
+    data_source_mode: helm_lite
+    n_base: 4
+    max_chain: 10
+    n_anchors: 25
+
+  # ============================================================================
+  # MMLU Fields - 57 datasets (MMLU subdomains), 428 models
+  # ============================================================================
+  
+  mmlu_fields:
+    description: "MMLU fields with 8 base, 10 anchors per field"
+    data_source_mode: mmlu_fields
+    n_base: 8
+    max_chain: 10
+    n_anchors: 10  # Lower for many small datasets (10*57 = 570 total)
+    # IMPORTANT: Use --mem=8g --time=24:0:0 when submitting
+    # Example: sbatch --mem=8g --time=24:0:0 run_chain_linking_unified.sh --preset mmlu_fields
+      
+  # ============================================================================
+  # Disjoint Experiments (Zero-overlap model allocation)
+  # ============================================================================
+  
+  lb_disjoint:
+    description: "LB disjoint experiment with fixed bridge models"
+    experiment_type: disjoint
+    data_source_mode: lb
+    n_base: 1
+    n_anchors: 100
+    n_bridge_models: 20
+    n_isolated_per_chain: 50
+    bridge_mode: fixed
+    
+  lb_disjoint_random:
+    description: "LB disjoint experiment with random bridge models"
+    experiment_type: disjoint
+    data_source_mode: lb
+    n_base: 1
+    n_anchors: 100
+    n_bridge_models: 20
+    n_isolated_per_chain: 50
+    bridge_mode: random
+
