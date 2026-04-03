@@ -65,23 +65,27 @@ from config.constants import (
     MIN_ANCHORS_PER_DATASET,
 )
 from irt import TrainingConfig, train_item_parameters
-from src.experiments.equating.cross_dataset_equating import (
+from src.data_loading import (
     PROJECT_ROOT,
     ExperimentConfig,
-    build_anchor_items_for_fixed_calibration,
     group_all_datasets_together,
     load_all_datasets,
+)
+from src.calibration import (
+    build_anchor_items_for_fixed_calibration,
     precompute_thetas_from_all_anchors,
-    run_discriminative_baseline_validation,
-    run_random_baseline_validation,
-    run_random_simple_baseline,
-    run_validation,
     select_anchors,
     select_anchors_for_dataset,
     select_anchors_pooled,
     train_irt_on_base,
 )
-from src.experiments.utils.io import round_df_for_save, round_for_json
+from src.evaluation import (
+    run_discriminative_baseline_validation,
+    run_random_baseline_validation,
+    run_random_simple_baseline,
+    run_validation,
+)
+from src.io import round_df_for_save, round_for_json
 
 # =============================================================================
 # Configuration

@@ -5,19 +5,28 @@ Experiment code for the paper *Growing Pains: Psychometric Scale-Linking for Eff
 ## Repository layout
 
 ```
-config/          sweep parameters and dataset configs
-scripts/         run_sweep.py — Python orchestrator (replaces shell scripts)
+config/
+  constants.py          sweep grids, dataset lists, seeds
+  data_source_config.json
+  experiment_presets.yaml
+
 src/
-  irt/           self-contained IRT library (2PL / MIRT training, anchor selection)
-  experiments/
-    chain_linking/   main sweep logic
-    equating/        cross-dataset linking functions used by chain_linking
-    utils/           shared I/O helpers
+  irt/                  IRT engine: 2PL/MIRT training, anchor selection, theta estimation
+  chain_experiment.py   entry point — runs one chain calibration experiment
+  data_loading.py       dataset loading and grouping by skill/source
+  calibration.py        base frame calibration, fixed-anchor calibration, anchor selection
+  evaluation.py         run_validation and baseline routines (random, discriminative)
+  io.py                 shared rounding helpers
+
+scripts/
+  run_sweep.py          Python orchestrator for all anchor/model-count sweeps
+
 data/
-  input/         place benchmark pickles/parquets here (not tracked in git)
-  output/        experiment outputs written here (not tracked in git)
+  input/                place benchmark pickles/parquets here (not in git)
+  output/               experiment results written here (not in git)
+
 tests/
-  demo_test.py   synthetic fast test + optional real-data full test
+  demo_test.py          fast synthetic IRT test + optional real-data test
 ```
 
 ## Setup
@@ -32,17 +41,17 @@ export PYTHONPATH="${PWD}:${PWD}/src"
 
 ## Input data
 
-Place benchmark response files under `data/input/` (see `data/input/README.md`).
+Place benchmark response files under `data/input/` — see `data/input/README.md`.
 
 ## Running sweeps
 
 ```bash
 python scripts/run_sweep.py --help
 python scripts/run_sweep.py --category 1a --dry-run   # preview commands
-python scripts/run_sweep.py --category 1a             # run anchor-count sweep on LB
+python scripts/run_sweep.py --category 1a             # run LB anchor-count sweep
 ```
 
-Sweep grids (datasets, anchor counts, model counts, seeds) are defined in `config/constants.py`.
+Sweep grids are defined in `config/constants.py`.
 
 ## Tests
 

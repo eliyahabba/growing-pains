@@ -40,7 +40,7 @@ from config.constants import (
     OUTPUT_MMLU_MODEL_EXTENDED,
 )
 
-CHAIN = REPO_ROOT / "src/experiments/chain_linking/chain_linking_parallel.py"
+CHAIN = REPO_ROOT / "src/chain_experiment.py"
 
 
 def _env() -> dict[str, str]:

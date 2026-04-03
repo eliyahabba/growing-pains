@@ -40,7 +40,7 @@ def run_fast() -> None:
     _ensure_path()
 
     from config.constants import LB_DATASETS
-    from src.experiments.utils.io import round_for_json
+    from src.io import round_for_json
 
     assert len(LB_DATASETS) == 6, f"expected 6 LB datasets, got {len(LB_DATASETS)}"
 
@@ -83,7 +83,7 @@ def run_full() -> None:
     if not tb.is_dir() or not any(tb.glob("*.pickle")):
         print("full: skip (no data/input/tinybenchmarks/*.pickle)")
         return
-    from src.experiments.equating.cross_dataset_equating import ExperimentConfig, load_all_datasets
+    from src.data_loading import ExperimentConfig, load_all_datasets
 
     cfg = ExperimentConfig(data_source_mode="lb")
     ds = load_all_datasets(cfg)
