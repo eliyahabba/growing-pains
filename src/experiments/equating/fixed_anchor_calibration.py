@@ -71,7 +71,7 @@ def _build_anchor_items(
     return anchors
 
 
-def run_fixed_anchor_linking(
+def run_fixed_anchor_calibration(
     skill: str,
     skills_root: Path,
     output_subdir: str = "equating/fixed_anchor",
@@ -198,7 +198,7 @@ def _process_skill(kwargs: dict) -> tuple[str, str, Exception | None]:
     """Worker function for parallel processing. Returns (skill, status, error)."""
     skill = kwargs.pop("skill")
     try:
-        out_path = run_fixed_anchor_linking(skill=skill, **kwargs)
+        out_path = run_fixed_anchor_calibration(skill=skill, **kwargs)
         if out_path:
             return skill, "completed", None
         else:
@@ -260,7 +260,7 @@ def main() -> None:
         for skill in skills:
             try:
                 print(f"Processing skill: {skill}")
-                out_path = run_fixed_anchor_linking(skill=skill, **common_kwargs)
+                out_path = run_fixed_anchor_calibration(skill=skill, **common_kwargs)
                 if out_path:
                     print(f"✓ [{skill}] Fixed-anchor calibration complete. Item params saved to {out_path}\n")
                 else:
