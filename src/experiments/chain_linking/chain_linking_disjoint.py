@@ -41,8 +41,7 @@ from config.constants import (
     EXCLUDED_DATASETS,
     MAX_RETRIES,
 )
-from llm_eval.selection.tinyBenchmarks.training import TrainingConfig
-from llm_eval.training import train_item_parameters
+from irt import TrainingConfig, train_item_parameters
 from src.experiments.equating.cross_dataset_equating import (
     PROJECT_ROOT,
     ExperimentConfig,
@@ -54,7 +53,7 @@ from src.experiments.equating.cross_dataset_equating import (
     select_anchors_for_dataset,
     train_irt_on_base,
 )
-from src.experiments.utils.helpers import round_for_json
+from src.experiments.utils.io import round_for_json
 
 # =============================================================================
 # Configuration

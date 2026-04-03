@@ -8,10 +8,10 @@ import json
 import numpy as np
 import pandas as pd
 
-from llm_eval.selection.interfaces import QuestionSelector, ModelProfile
-from llm_eval.selection.cold_start import simple_cold_start_theta
-from .anchors import find_anchor_items, AnchorConfig
-from .estimation import estimate_theta_from_anchors, EstimationConfig
+from irt.interfaces import QuestionSelector, ModelProfile
+from irt.cold_start import simple_cold_start_theta
+from irt.anchors import find_anchor_items, AnchorConfig
+from irt.estimation import estimate_theta_from_anchors, EstimationConfig
 
 
 @dataclass

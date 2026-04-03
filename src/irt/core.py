@@ -5,7 +5,7 @@ import sys
 import jsonlines
 from scipy.optimize import minimize
 
-from .math_utils import *
+from irt.math_utils import *
 
 
 def create_irt_dataset(responses, dataset_name, question_ids=None):

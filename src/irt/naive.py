@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from llm_eval.selection.interfaces import QuestionSelector, ModelProfile
+from irt.interfaces import QuestionSelector, ModelProfile
 
 
 class NaiveVarianceSelector(QuestionSelector):

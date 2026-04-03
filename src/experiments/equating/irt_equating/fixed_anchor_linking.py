@@ -8,8 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from llm_eval.selection.tinyBenchmarks.training import TrainingConfig
-from llm_eval.training import train_item_parameters, save_item_parameters, select_anchors_structured_with_matrix, save_anchors_structured
+from irt import TrainingConfig, train_item_parameters, save_item_parameters, select_anchors_structured_with_matrix, save_anchors_structured
 
 
 def _load_matrix(path: Path) -> pd.DataFrame:
@@ -72,7 +71,7 @@ def _build_anchor_items(
     return anchors
 
 
-def run_fixed_anchor_calibration(
+def run_fixed_anchor_linking(
     skill: str,
     skills_root: Path,
     output_subdir: str = "equating/fixed_anchor",
@@ -199,7 +198,7 @@ def _process_skill(kwargs: dict) -> tuple[str, str, Exception | None]:
     """Worker function for parallel processing. Returns (skill, status, error)."""
     skill = kwargs.pop("skill")
     try:
-        out_path = run_fixed_anchor_calibration(skill=skill, **kwargs)
+        out_path = run_fixed_anchor_linking(skill=skill, **kwargs)
         if out_path:
             return skill, "completed", None
         else:
@@ -261,7 +260,7 @@ def main() -> None:
         for skill in skills:
             try:
                 print(f"Processing skill: {skill}")
-                out_path = run_fixed_anchor_calibration(skill=skill, **common_kwargs)
+                out_path = run_fixed_anchor_linking(skill=skill, **common_kwargs)
                 if out_path:
                     print(f"✓ [{skill}] Fixed-anchor calibration complete. Item params saved to {out_path}\n")
                 else:

@@ -17,7 +17,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .math_utils import item_curve, estimate_ability_parameters
+from irt.math_utils import item_curve, estimate_ability_parameters
 
 # One-time logging flags (per process) to understand which theta-estimation path is used.
 _THETA_ESTIMATION_PATH_LOGGED = {"full_matrices": False, "fallback": False}

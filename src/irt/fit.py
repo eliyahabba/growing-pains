@@ -32,8 +32,8 @@ import json
 import torch
 
 # Import the exact functions from notebook files
-from .irt import create_irt_dataset, train_irt_model, train_irt_model_python_api, load_irt_parameters, load_irt_parameters_from_trainer, estimate_ability_parameters
-from .math_utils import sigmoid, item_curve
+from irt.core import create_irt_dataset, train_irt_model, train_irt_model_python_api, load_irt_parameters, load_irt_parameters_from_trainer, estimate_ability_parameters
+from irt.math_utils import sigmoid, item_curve
 
 
 def get_best_device() -> str:

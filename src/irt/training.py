@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from llm_eval.selection.tinyBenchmarks.anchors import AnchorConfig, find_anchor_items, find_anchor_items_clustering
-from llm_eval.selection.tinyBenchmarks.training import TrainingConfig, fit_2pl_parameters
+from irt.anchors import AnchorConfig, find_anchor_items, find_anchor_items_clustering
+from irt.fit import TrainingConfig, fit_2pl_parameters
 
 
 def train_item_parameters(

@@ -7,8 +7,8 @@ from typing import Mapping
 import numpy as np
 import pandas as pd
 
-from llm_eval.selection.interfaces import QuestionSelector, ModelProfile
-from llm_eval.selection.cold_start import simple_cold_start_theta
+from irt.interfaces import QuestionSelector, ModelProfile
+from irt.cold_start import simple_cold_start_theta
 
 
 def _entropy_bits(p: float) -> float:

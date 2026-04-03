@@ -1,6 +1,6 @@
 
 
-from llm_eval.selection.interfaces import ModelProfile
+from irt.interfaces import ModelProfile
 
 
 def simple_cold_start_theta(model: ModelProfile) -> float:
