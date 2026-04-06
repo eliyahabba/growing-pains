@@ -12,43 +12,15 @@ If something fails, it will raise an error or print a warning.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 import warnings
 import numpy as np
 import pandas as pd
 
-from irt.math_utils import item_curve, estimate_ability_parameters
-
-# One-time logging flags (per process) to understand which theta-estimation path is used.
-_THETA_ESTIMATION_PATH_LOGGED = {"full_matrices": False, "fallback": False}
-
+from irt.math_utils import item_curve, estimate_ability_parameters, scenario_from_dataset
 
 # ============================================================================
-# BACKWARDS COMPATIBILITY FUNCTIONS
-# ============================================================================
-
-def expected_correctness(item_params: pd.DataFrame, theta: float) -> pd.Series:
-    """Return expected correctness for each item at ability theta under 2PL."""
-    z = item_params["a"].astype(float) * (theta - item_params["b"].astype(float))
-    p = 1.0 / (1.0 + np.exp(-z))
-    return p.astype(float)
-
-
-def blend_anchor_and_irt(
-    preds_anchor: pd.Series,
-    preds_irt: pd.Series,
-    lambdas_by_dataset: dict[str, float] | None,
-    item_to_dataset: pd.Series | None = None,
-) -> pd.Series:
-    """Blend predictions as in gp-IRT: lambda*data + (1-lambda)*irt."""
-    if lambdas_by_dataset is None or item_to_dataset is None:
-        return 0.5 * preds_anchor + 0.5 * preds_irt
-    lam = item_to_dataset.map(lambda d: float(lambdas_by_dataset.get(str(d), 0.5))).astype(float)
-    return lam * preds_anchor + (1.0 - lam) * preds_irt
-
-
-# ============================================================================
-# MAIN ESTIMATION CODE
+# ESTIMATION
 # ============================================================================
 
 @dataclass
@@ -103,11 +75,6 @@ def estimate_theta_from_anchors(
     
     # Use full matrices if provided (efficbench style)
     if A_matrix is not None and B_matrix is not None and question_ids_order is not None:
-        if not _THETA_ESTIMATION_PATH_LOGGED["full_matrices"]:
-            # Keep this loud but one-time to avoid log spam on large runs.
-            print(f"   ✅ Theta estimation path: FULL MIRT matrices (D={A_matrix.shape[1] if len(A_matrix.shape) == 3 else 'unknown'})")
-            _THETA_ESTIMATION_PATH_LOGGED["full_matrices"] = True
-
         qid_to_idx = {qid: i for i, qid in enumerate(question_ids_order)}
         
         # Get indices for common anchors
@@ -126,11 +93,7 @@ def estimate_theta_from_anchors(
         D = A.shape[1]
         init_theta_val = np.zeros(D) if init_theta == 0.0 else np.full(D, init_theta)
     else:
-        if not _THETA_ESTIMATION_PATH_LOGGED["fallback"]:
-            print("   ⚠️  Theta estimation path: FALLBACK (scalar params from item_params; no full MIRT matrices provided)")
-            _THETA_ESTIMATION_PATH_LOGGED["fallback"] = True
-
-        # Fallback: use scalar parameters from item_params
+        # Use scalar parameters from item_params
         # Filter common items to ensure valid data
         valid_common = []
         for q in common:
@@ -158,23 +121,19 @@ def estimate_theta_from_anchors(
             try:
                 a_values = np.array(a_list).T
                 b_values = np.array(b_list).T
-            except Exception as e:
-                # Fallback for inhomogeneous lists - try to fix or raise clear error
-                if len(a_list) > 0:
-                    expected_len = len(a_list[0])
-                    # Filter only valid length items
-                    valid_indices = [i for i, x in enumerate(a_list) if len(x) == expected_len]
-                    if len(valid_indices) < len(a_list):
-                        # Update lists and common keys
-                        a_list = [a_list[i] for i in valid_indices]
-                        b_list = [b_list[i] for i in valid_indices]
-                        common = [common[i] for i in valid_indices]
-                        a_values = np.array(a_list).T
-                        b_values = np.array(b_list).T
-                    else:
-                        raise ValueError(f"Inhomogeneous parameter shapes: {e}")
-                else:
-                    raise e
+            except ValueError as e:
+                # Inhomogeneous list shapes — filter to consistent length
+                if not a_list:
+                    raise
+                expected_len = len(a_list[0])
+                valid = [i for i, x in enumerate(a_list) if len(x) == expected_len]
+                if len(valid) == len(a_list):
+                    raise ValueError(f"Inhomogeneous parameter shapes: {e}") from e
+                a_list = [a_list[i] for i in valid]
+                b_list = [b_list[i] for i in valid]
+                common = [common[i] for i in valid]
+                a_values = np.array(a_list).T
+                b_values = np.array(b_list).T
 
             A = a_values[None, :, :]
             B = b_values[None, :, :]
@@ -197,9 +156,8 @@ def estimate_theta_from_anchors(
             theta_init=init_theta_val,
             optimizer="BFGS"
         )
-        # Return scalar theta (first dimension) for compatibility
         return optimal_theta
-    except Exception as e:
+    except (ValueError, RuntimeError, np.linalg.LinAlgError) as e:
         warnings.warn(f"Theta optimization failed ({e}), using mean of anchor responses as fallback")
         return float(anchor_responses.mean())
 
@@ -355,10 +313,6 @@ def run_estimation_validation(
     
     # Compute balance weights
     balance_weights_by_scenario = compute_balance_weights_for_validation(test_matrix)
-    
-    # Group datasets by scenario
-    def scenario_from_dataset(name: str) -> str:
-        return name.split(".")[0] if "." in name else name
     
     scenario_datasets = {}
     for dataset_name in datasets:

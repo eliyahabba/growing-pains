@@ -19,21 +19,18 @@ to maintain complete compatibility with the notebook workflow.
 """
 
 from dataclasses import dataclass, field
-from typing import Any
 import os
 import tempfile
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import pickle
 import json
 import torch
 
-# Import the exact functions from notebook files
-from irt.core import create_irt_dataset, train_irt_model, train_irt_model_python_api, load_irt_parameters, load_irt_parameters_from_trainer, estimate_ability_parameters
-from irt.math_utils import sigmoid, item_curve
+from irt.core import create_irt_dataset, train_irt_model_python_api, load_irt_parameters_from_trainer
+from irt.math_utils import estimate_ability_parameters
+from irt.math_utils import item_curve, scenario_from_dataset
 
 
 def get_best_device() -> str:
@@ -362,10 +359,6 @@ def validate_irt_dimensions(
     errors_by_dimension = []
     errors_by_dataset = {}
 
-    # Helper to extract scenario root from dataset name
-    def scenario_from_dataset(name: str) -> str:
-        return name.split(".")[0] if isinstance(name, str) and "." in name else name
-    
     failed_dimensions = {}  # Track which dimensions failed and why
     
     for D in tqdm(Ds, desc="Validating dimensions"):
@@ -409,10 +402,10 @@ def validate_irt_dimensions(
             
             if "dataset" in val_df.columns:
                 # Group by scenario root (prefix before '.')
-                scenarios = sorted({scenario_from_dataset(d) for d in val_df["dataset"].unique()})
+                scenarios = sorted({_scenario_from_dataset(d) for d in val_df["dataset"].unique()})
                 for scenario in tqdm(scenarios):
-                    dataset_val_df = val_df[val_df["dataset"].map(lambda d: scenario_from_dataset(d) == scenario)]
-                    dataset_orig_df = original_val_df[original_val_df["dataset"].map(lambda d: scenario_from_dataset(d) == scenario)]
+                    dataset_val_df = val_df[val_df["dataset"].map(lambda d: _scenario_from_dataset(d) == scenario)]
+                    dataset_orig_df = original_val_df[original_val_df["dataset"].map(lambda d: _scenario_from_dataset(d) == scenario)]
 
                     if dataset_val_df.empty:
                         continue
@@ -553,51 +546,6 @@ def _get_model_responses(model_df: pd.DataFrame, question_subset: list) -> dict:
     return dict(zip(subset_df["question_id"], subset_df["normalized_score"]))
 
 
-def _estimate_theta_mle(responses: dict, A: np.ndarray, B: np.ndarray, all_questions: list) -> float:
-    """Estimate theta using MLE from observed responses."""
-    # Simple MLE estimation - this is a simplified version
-    # In practice, you might want to use the exact estimate_ability_parameters function
-    if not responses:
-        return 0.0
-    
-    # Convert responses to arrays aligned with A and B
-    response_array = []
-    a_array = []
-    b_array = []
-    
-    for q in responses.keys():
-        if q in all_questions:
-            q_idx = all_questions.index(q)
-            if q_idx < A.shape[2]:  # Make sure we have parameters for this question
-                response_array.append(responses[q])
-                a_array.append(np.linalg.norm(A[0, :, q_idx]))  # Collapse multi-dim to scalar
-                b_array.append(np.mean(B[0, :, q_idx]))  # Collapse multi-dim to scalar
-    
-    if not response_array:
-        return 0.0
-    
-    # Simple Newton-Raphson for theta estimation
-    theta = 0.0
-    for _ in range(50):
-        z = np.array(a_array) * theta - np.array(b_array)
-        p = sigmoid(z)
-        
-        grad = np.sum(np.array(a_array) * (np.array(response_array) - p))
-        hess = -np.sum((np.array(a_array) ** 2) * p * (1 - p)) - 1e-6
-        
-        if abs(hess) < 1e-10:
-            break
-            
-        step = grad / hess
-        theta_new = theta - step
-        
-        if abs(theta_new - theta) < 1e-4:
-            break
-        theta = theta_new
-    
-    return theta
-
-
 def _predict_responses(theta: np.ndarray | float, A: np.ndarray, B: np.ndarray, questions: list, all_questions: list) -> dict:
     """Predict responses for given questions using estimated theta (supports multi-D)."""
     predictions = {}
@@ -663,14 +611,8 @@ def compute_lambda_values(
 
         return lambdas
     
-    # Helper to scenario root
-    def scenario_from_dataset(name: str) -> str:
-        return name.split(".")[0] if isinstance(name, str) and "." in name else name
-
-    # Compute lambda for each scenario (group of subdatasets)
-    # Only process scenarios that have validation errors
     available_scenarios = set(validation_errors.keys())
-    all_scenarios = sorted({scenario_from_dataset(d) for d in original_matrix_df["dataset"].unique()})
+    all_scenarios = sorted({_scenario_from_dataset(d) for d in original_matrix_df["dataset"].unique()})
     
     # Filter to scenarios that have validation errors
     scenarios_to_process = [s for s in all_scenarios if s in available_scenarios]
@@ -679,7 +621,7 @@ def compute_lambda_values(
         raise ValueError(f"No scenarios with validation errors found. Available: {available_scenarios}, Required: {all_scenarios}")
 
     for scenario in scenarios_to_process:
-        scenario_df = original_matrix_df[original_matrix_df["dataset"].map(lambda d: scenario_from_dataset(d) == scenario)]
+        scenario_df = original_matrix_df[original_matrix_df["dataset"].map(lambda d: _scenario_from_dataset(d) == scenario)]
 
         # Compute variance for this scenario: mean over models of var across items
         variance = _compute_dataset_variance(scenario_df)

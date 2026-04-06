@@ -1,11 +1,7 @@
-import json
-import os
-import sys
-
 import jsonlines
-from scipy.optimize import minimize
+import numpy as np
 
-from irt.math_utils import *
+from irt.math_utils import item_curve, estimate_ability_parameters
 
 
 def create_irt_dataset(responses, dataset_name, question_ids=None):
@@ -74,7 +70,6 @@ def train_irt_model_python_api(dataset_name, D, lr, epochs, device, anchor_items
     from py_irt.training import IrtConfig, IrtModelTrainer
     # Create IRT config
     config = IrtConfig(
-        # model_type=TwoParamLogistic,
         model_type='multidim_2pl',
         epochs=epochs,
         priors='hierarchical',
@@ -122,50 +117,9 @@ def train_irt_model_python_api(dataset_name, D, lr, epochs, device, anchor_items
                 existing_initializers.append("anchor_items")
             config.initializers = existing_initializers
 
-    # Create and train the model
     trainer = IrtModelTrainer(config=config, **trainer_kwargs)
     trainer.train(device=device)
-    # Constructing the command string
-    # command=f"py-irt train 'multidim_2pl' {dataset_name} {model_name} --dims {D} --lr {lr} --epochs {epochs} --device {device} --priors 'hierarchical' --seed 42 --deterministic --log-every 200"
-    # with SuppressPrints():
-    #     os.system(command)
     return trainer
-
-
-class SuppressPrints:
-    """
-    A context manager to suppress prints to the console, useful for making output cleaner.
-    """
-
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        self._original_stderr = sys.stderr
-        sys.stdout = open(os.devnull, 'w')
-        sys.stderr = open(os.devnull, 'w')
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stderr.close()
-        sys.stdout = self._original_stdout
-        sys.stderr = self._original_stderr
-
-
-def train_irt_model(dataset_name, model_name, D, lr, epochs, device):
-    """
-    Trains an IRT model using the py-irt command-line tool.
-    
-    Parameters:
-    - dataset_name: The name of the dataset file.
-    - model_name: The desired name for the output model.
-    - D: The number of dimensions for the IRT model.
-    - lr: Learning rate for the model training.
-    - epochs: The number of epochs to train the model.
-    - device: The computing device ('cpu' or 'gpu') to use for training.
-    """
-
-    # Constructing the command string
-    command = f"py-irt train 'multidim_2pl' {dataset_name} {model_name} --dims {D} --lr {lr} --epochs {epochs} --device {device} --priors 'hierarchical' --seed 42 --deterministic --log-every 200"
-    os.system(command)
 
 
 def load_irt_parameters_from_trainer(trainer):
@@ -188,41 +142,3 @@ def load_irt_parameters_from_trainer(trainer):
     Theta = np.array(theta_list)[:, :, None]
     return A, B, Theta
 
-
-def load_irt_parameters(model_name):
-    """
-    Loads the parameters from a trained IRT model file.
-    
-    Parameters:
-    - model_name: The name of the file containing the model parameters.
-    
-    Returns: 
-    - A, B, and Theta: The discrimination, difficulty, and ability parameters, respectively, from the IRT model.
-    """
-
-    params_file = os.path.join(model_name, 'best_parameters.json')
-
-    # Try multiple possible file locations/names
-    possible_files = [
-        params_file,
-        os.path.join(model_name, 'parameters.json'),
-        model_name + '_best_parameters.json',
-        model_name + '_parameters.json'
-    ]
-
-    params = None
-    for file_path in possible_files:
-        try:
-            with open(file_path) as f:
-                params = json.load(f)
-                break
-        except FileNotFoundError:
-            continue
-
-    if params is None:
-        raise FileNotFoundError(f"No parameter file found. Searched: {possible_files}")
-
-    A = np.array(params['disc']).T[None, :, :]
-    B = np.array(params['diff']).T[None, :, :]
-    Theta = np.array(params['ability'])[:, :, None]
-    return A, B, Theta

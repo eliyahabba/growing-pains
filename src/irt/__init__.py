@@ -1,9 +1,4 @@
-from .training import (
-    train_item_parameters,
-    save_item_parameters,
-    select_anchors_structured_with_matrix,
-    save_anchors_structured,
-)
+from .training import train_item_parameters, save_item_parameters
 from .fit import TrainingConfig, fit_2pl_parameters, compute_lambda_values
 from .estimation import estimate_theta_from_anchors, run_estimation_validation
 from .anchors import AnchorConfig, find_anchor_items_clustering, find_anchor_items_top_k_discrimination
@@ -11,8 +6,6 @@ from .anchors import AnchorConfig, find_anchor_items_clustering, find_anchor_ite
 __all__ = [
     "train_item_parameters",
     "save_item_parameters",
-    "select_anchors_structured_with_matrix",
-    "save_anchors_structured",
     "TrainingConfig",
     "fit_2pl_parameters",
     "compute_lambda_values",

@@ -89,25 +89,6 @@ def item_curve(theta, a, b):
     return sigmoid(z)
 
 
-def simple_item_curve(theta, a, b):
-    """
-    Simple version of item_curve for basic use cases.
-    
-    This is the original simpler implementation kept for backward compatibility.
-    
-    Parameters:
-    - theta: The ability parameter of the subject.
-    - a: The discrimination parameter of the item.
-    - b: The difficulty parameter of the item.
-    
-    Returns:
-    - The probability of a correct response given the item parameters and subject ability.
-    """
-    z = np.clip(a * theta - b, -30, 30)
-    if z.ndim > 1:
-        z = z.sum(axis=1)
-    return sigmoid(z)
-
 
 def estimate_ability_parameters(responses_test, A, B, theta_init=None, eps=1e-10, optimizer="BFGS"):
     """
@@ -177,3 +158,8 @@ def estimate_ability_parameters(responses_test, A, B, theta_init=None, eps=1e-10
         optimal_theta = np.array([[[result.x[0]]]])
 
     return optimal_theta
+
+
+def scenario_from_dataset(name: str) -> str:
+    """Extract scenario root from a dataset name (e.g. 'mmlu.stem' → 'mmlu')."""
+    return name.split(".")[0] if isinstance(name, str) and "." in name else name
