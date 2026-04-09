@@ -43,6 +43,10 @@ from config.constants import (
 CHAIN = REPO_ROOT / "src/chain_experiment.py"
 
 
+def _num_workers_args(n: int) -> list[str]:
+    return ["--num-workers", str(n)]
+
+
 def _env() -> dict[str, str]:
     e = os.environ.copy()
     e["PYTHONPATH"] = f"{REPO_ROOT}:{REPO_ROOT / 'src'}"
@@ -100,7 +104,7 @@ def _helm_common(anchors: int) -> list[str]:
     ]
 
 
-def cat_lb_anchor(base: Path, dry: bool) -> None:
+def cat_lb_anchor(base: Path, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_LB_ANCHOR_SWEEP
     seed = LB_ANCHOR_SWEEP_BASE_SEED
     for target in LB_DATASETS:
@@ -121,11 +125,12 @@ def cat_lb_anchor(base: Path, dry: bool) -> None:
                 target,
                 "--random-seed",
                 str(1000 + anchors),
+                *_num_workers_args(num_workers),
             ]
             _run(cmd, dry)
 
 
-def cat_lb_model(base: Path, dry: bool) -> None:
+def cat_lb_model(base: Path, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_LB_MODEL_SWEEP
     seed = LB_MODEL_SWEEP_BASE_SEED
     for target in LB_DATASETS:
@@ -148,11 +153,12 @@ def cat_lb_model(base: Path, dry: bool) -> None:
                 target,
                 "--random-seed",
                 str(2000 + models),
+                *_num_workers_args(num_workers),
             ]
             _run(cmd, dry)
 
 
-def cat_lb_extended(base: Path, n_seeds: int, dry: bool) -> None:
+def cat_lb_extended(base: Path, n_seeds: int, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_LB_MODEL_EXTENDED
     for seed_offset in range(n_seeds):
         for ti, target in enumerate(LB_DATASETS):
@@ -174,11 +180,12 @@ def cat_lb_extended(base: Path, n_seeds: int, dry: bool) -> None:
                     target,
                     "--random-seed",
                     str(3000 + models),
+                    *_num_workers_args(num_workers),
                 ]
                 _run(cmd, dry)
 
 
-def cat_mmlu_extended(base: Path, n_seeds: int, dry: bool) -> None:
+def cat_mmlu_extended(base: Path, n_seeds: int, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_MMLU_MODEL_EXTENDED
     for seed_offset in range(n_seeds):
         run_seed = MMLU_EXTENDED_BASE_SEED + seed_offset
@@ -197,11 +204,12 @@ def cat_mmlu_extended(base: Path, n_seeds: int, dry: bool) -> None:
                 str(run_seed),
                 "--random-seed",
                 str(4000 + models),
+                *_num_workers_args(num_workers),
             ]
             _run(cmd, dry)
 
 
-def cat_helm_extended(base: Path, n_seeds: int, dry: bool) -> None:
+def cat_helm_extended(base: Path, n_seeds: int, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_HELM_MODEL_EXTENDED
     for seed_offset in range(n_seeds):
         for ti, target in enumerate(HELM_LITE_DATASETS):
@@ -223,11 +231,12 @@ def cat_helm_extended(base: Path, n_seeds: int, dry: bool) -> None:
                     target,
                     "--random-seed",
                     str(5000 + models),
+                    *_num_workers_args(num_workers),
                 ]
                 _run(cmd, dry)
 
 
-def cat_mmlu_anchor(base: Path, dry: bool) -> None:
+def cat_mmlu_anchor(base: Path, num_workers: int, dry: bool) -> None:
     out = base / OUTPUT_MMLU_ANCHOR_SWEEP
     for run_seed in MMLU_ANCHOR_SWEEP_SEEDS:
         for anchors in MMLU_ANCHOR_COUNTS:
@@ -243,6 +252,7 @@ def cat_mmlu_anchor(base: Path, dry: bool) -> None:
                 str(run_seed),
                 "--random-seed",
                 str(6000 + anchors),
+                *_num_workers_args(num_workers),
             ]
             _run(cmd, dry)
 
@@ -256,6 +266,12 @@ def main() -> None:
     )
     p.add_argument("--base-dir", type=Path, default=DEFAULT_BASE_DIR)
     p.add_argument("--n-seeds", type=int, default=3)
+    p.add_argument(
+        "--num-workers",
+        type=int,
+        default=1,
+        help="Forwarded to chain_experiment.py (1 = lowest RAM; 4 is faster if the job has memory).",
+    )
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args()
     base = args.base_dir
@@ -263,19 +279,20 @@ def main() -> None:
         base = REPO_ROOT / base
     dry = args.dry_run
     cats = ["1a", "1b", "5", "6", "7", "8"] if args.category == "all" else [args.category]
+    nw = args.num_workers
     for c in cats:
         if c == "1a":
-            cat_lb_anchor(base, dry)
+            cat_lb_anchor(base, nw, dry)
         elif c == "1b":
-            cat_lb_model(base, dry)
+            cat_lb_model(base, nw, dry)
         elif c == "5":
-            cat_lb_extended(base, args.n_seeds, dry)
+            cat_lb_extended(base, args.n_seeds, nw, dry)
         elif c == "6":
-            cat_mmlu_extended(base, args.n_seeds, dry)
+            cat_mmlu_extended(base, args.n_seeds, nw, dry)
         elif c == "7":
-            cat_helm_extended(base, args.n_seeds, dry)
+            cat_helm_extended(base, args.n_seeds, nw, dry)
         elif c == "8":
-            cat_mmlu_anchor(base, dry)
+            cat_mmlu_anchor(base, nw, dry)
 
 
 if __name__ == "__main__":
