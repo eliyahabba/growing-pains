@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
+# One chain_experiment.py run per Slurm job (same idea as AdaptEval's
+# sh_run/run_chain_linking_unified.sh). Override resources when submitting, e.g.:
+#   sbatch --mem=8g --time=24:0:0 scripts/run_chain_job.sh --output-dir ...
 #
-# Cluster (like AdaptEval): one Slurm job per experiment — run from login or a tiny driver job:
-#   bash scripts/run_sweep.sh --dispatch sbatch --category 1a
-# Or submit a light driver that only calls sbatch many times:
-#   sbatch scripts/run_sweep_driver_job.sh --category 1a
-#
-# Optional venv: override with RUN_SWEEP_VENV=/path/to/venv/bin/activate
+#SBATCH --job-name=gp-chain
+#SBATCH --mem=24g
+#SBATCH --time=12:0:0
+#SBATCH --cpus-per-task=2
+#SBATCH --gres=gg:g0:2
+#SBATCH --killable
+#SBATCH --requeue
+
+set -euo pipefail
+
 VENV_ACTIVATE="${RUN_SWEEP_VENV:-/cs/snapless/gabis/eliyahabba/venvs/AdaptEval/bin/activate}"
 if [ -f "$VENV_ACTIVATE" ]; then
   # shellcheck disable=SC1090
   source "$VENV_ACTIVATE"
 fi
 
-set -euo pipefail
-
-# Never derive repo root from $0 alone under sbatch (script is copied under /var/spool/slurmd/).
 if [ -n "${PROJECT_DIR:-}" ]; then
   PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
 elif [ -n "${GROWING_PAINS_ROOT:-}" ]; then
   PROJECT_DIR="$(cd "${GROWING_PAINS_ROOT}" && pwd)"
-elif [ -n "${SLURM_SUBMIT_DIR:-}" ] && [ -f "${SLURM_SUBMIT_DIR}/scripts/run_sweep.py" ]; then
+elif [ -n "${SLURM_SUBMIT_DIR:-}" ] && [ -f "${SLURM_SUBMIT_DIR}/scripts/run_chain_job.sh" ]; then
   PROJECT_DIR="$(cd "${SLURM_SUBMIT_DIR}" && pwd)"
 else
   PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -37,4 +41,8 @@ export PYTHONPATH="${PROJECT_DIR}/src:${PROJECT_DIR}${PYTHONPATH:+:$PYTHONPATH}"
 export UNITXT_ALLOW_UNVERIFIED_CODE="${UNITXT_ALLOW_UNVERIFIED_CODE:-True}"
 export CUDA_LAUNCH_BLOCKING="${CUDA_LAUNCH_BLOCKING:-1}"
 
-exec python "${PROJECT_DIR}/scripts/run_sweep.py" "$@"
+if command -v module &>/dev/null; then
+  module load cuda 2>/dev/null || true
+fi
+
+exec python "${PROJECT_DIR}/src/chain_experiment.py" "$@"
