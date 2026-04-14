@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from irt import (
+from src.irt import (
     TrainingConfig,
     fit_2pl_parameters,
     find_anchor_items_clustering,
@@ -15,7 +15,7 @@ from irt import (
     save_item_parameters,
     estimate_theta_from_anchors,
 )
-from irt.anchors import find_anchor_items_top_k_discrimination
+from src.irt.anchors import find_anchor_items_top_k_discrimination
 from src.data_loading import ExperimentConfig
 
 

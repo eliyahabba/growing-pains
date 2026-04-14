@@ -16,7 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 @dataclass
 class ExperimentConfig:
     """Configuration for cross-dataset equating experiments."""
-    tinybenchmarks_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data" / "input" / "tinybenchmarks")
+    input_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data" / "input")
     output_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data" / "cross_dataset_equating")
     data_source_mode: str = "lb"
     dims_search: list = field(default_factory=lambda: [2, 5])
@@ -96,13 +96,9 @@ def load_all_datasets(config: ExperimentConfig) -> dict[str, pd.DataFrame]:
     paths_config = source_config.get('paths', {})
     print(f"   Data source mode: {config.data_source_mode}, {len(datasets_config)} datasets")
 
-    tinybenchmarks_dir = Path(paths_config.get('tinybenchmarks_dir', config.tinybenchmarks_dir))
-    aggregated_dir = Path(paths_config.get('aggregated_dir', str(Path(config.tinybenchmarks_dir).parent / 'aggregated')))
-    reeval_dir = Path(paths_config.get('reeval_dir', str(Path(config.tinybenchmarks_dir).parent / 'reeval')))
+    input_dir = Path(paths_config.get('input_dir', config.input_dir))
 
     loaded_pickles: dict = {}
-    loaded_parquets: dict = {}
-    reeval_data = None
     datasets: dict = {}
 
     for dataset_name in sorted(datasets_config):
@@ -110,8 +106,8 @@ def load_all_datasets(config: ExperimentConfig) -> dict[str, pd.DataFrame]:
         source_type = ds_config.get('source_type')
         source_file = ds_config.get('source_file')
         try:
-            if source_type == 'tinybenchmarks':
-                pickle_path = tinybenchmarks_dir / source_file
+            if source_type == 'pickle':
+                pickle_path = input_dir / source_file
                 if source_file not in loaded_pickles:
                     if not pickle_path.exists():
                         print(f"  Warning: {pickle_path} not found, skipping {dataset_name}")
@@ -119,31 +115,6 @@ def load_all_datasets(config: ExperimentConfig) -> dict[str, pd.DataFrame]:
                     loaded_pickles[source_file] = load_pickle_data(str(pickle_path))
                 df = extract_from_pickle(loaded_pickles[source_file], dataset_name,
                                          ds_config.get('pickle_keys'), ds_config.get('pickle_key_pattern'))
-
-            elif source_type == 'aggregated':
-                parquet_path = aggregated_dir / source_file
-                if source_file not in loaded_parquets:
-                    if not parquet_path.exists():
-                        print(f"  Warning: {parquet_path} not found, skipping {dataset_name}")
-                        continue
-                    loaded_parquets[source_file] = pd.read_parquet(parquet_path)
-                df = extract_from_parquet(loaded_parquets[source_file], dataset_name,
-                                          ds_config.get('parquet_filter', dataset_name))
-
-            elif source_type == 'reeval':
-                part1 = reeval_dir / "reeval_formatted_part1.parquet"
-                part2 = reeval_dir / "reeval_formatted_part2.parquet"
-                single = reeval_dir / "reeval_formatted.parquet"
-                if reeval_data is None:
-                    if part1.exists() and part2.exists():
-                        reeval_data = pd.concat([pd.read_parquet(part1), pd.read_parquet(part2)], ignore_index=True)
-                    elif single.exists():
-                        reeval_data = pd.read_parquet(single)
-                    else:
-                        print(f"  Warning: reeval data not found, skipping {dataset_name}")
-                        continue
-                scenario = ds_config.get('scenario_name', dataset_name)
-                df = reeval_data[reeval_data['dataset'] == scenario][['model_name', 'question_id', 'dataset', 'normalized_score']].drop_duplicates(subset=['model_name', 'question_id']).copy()
 
             else:
                 print(f"  Warning: Unknown source type {source_type!r} for {dataset_name}")

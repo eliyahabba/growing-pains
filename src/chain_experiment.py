@@ -16,10 +16,10 @@ import pandas as pd
 
 from config.constants import (
     ANCHOR_IRT_CLUSTERING, ANCHOR_TOP_K, ANCHOR_CORRECTNESS,
-    CHAIN_DIRECT, ERROR_METRICS, EXCLUDED_DATASETS,
+    CHAIN_DIRECT, ERROR_METRICS,
     MAX_RETRIES, METHOD_CONCURRENT, METHOD_FIXED, MIN_ANCHORS_PER_DATASET,
 )
-from irt import TrainingConfig, train_item_parameters
+from src.irt import TrainingConfig, train_item_parameters
 from src.calibration import (
     build_anchor_items_for_fixed_calibration,
     precompute_thetas_from_all_anchors,
@@ -37,11 +37,10 @@ multiprocessing.set_start_method('spawn', force=True)
 
 # Sensible per-mode defaults that differ from the general defaults
 _MODE_DEFAULTS: dict[str, dict] = {
-    "tinybenchmarks": {"n_base_datasets": 1, "max_chain_length": 5},
-    "lb_only":        {"n_base_datasets": 1, "max_chain_length": 5},
-    "lb":             {"n_base_datasets": 1, "max_chain_length": 5},
-    "mmlu_split":     {"n_base_datasets": 1},
-    "mmlu_fields":    {"n_base_datasets": 1},
+    "lb_only":     {"n_base_datasets": 1, "max_chain_length": 5},
+    "lb":          {"n_base_datasets": 1, "max_chain_length": 5},
+    "mmlu_split":  {"n_base_datasets": 1},
+    "mmlu_fields": {"n_base_datasets": 1},
 }
 
 
@@ -53,7 +52,7 @@ class ParallelChainConfig(ExperimentConfig):
     shuffle_seed: int = 42
     random_seed: int = 1000
     output_dir: Path = field(default_factory=lambda: PROJECT_ROOT / "data" / "chain_parallel_b")
-    data_source_mode: str = "helm_lite"
+    data_source_mode: str = "lb"
     filter_zero_variance: bool = False
     validate_dimensions: bool = True
     # epochs: concurrent full-retrain; epochs_fixed: fixed-anchor (fewer needed — anchors constrain scale)
@@ -495,8 +494,6 @@ def _setup_experiment(config: ParallelChainConfig) -> tuple:
     """Load datasets, assign target/base/chain, create directories."""
     print("1. Loading datasets...")
     datasets = load_all_datasets(config)
-    for ds in EXCLUDED_DATASETS:
-        datasets.pop(ds, None)
     print(f"   {len(datasets)} datasets loaded")
 
     skill_to_datasets = group_all_datasets_together(datasets, min_common_models=4)
@@ -785,8 +782,8 @@ if __name__ == "__main__":
     parser.add_argument("--dims", type=int, nargs="+", default=[5])
     parser.add_argument("--epochs", type=int, default=2000)
     parser.add_argument("--epochs-fixed", type=int, default=1000)
-    parser.add_argument("--data-source-mode", type=str, default="helm_lite",
-                        choices=["helm_lite", "helm_classic", "lb_only", "lb", "reeval", "mmlu_split", "mmlu_fields"])
+    parser.add_argument("--data-source-mode", type=str, default="lb",
+                        choices=["lb", "lb_only", "mmlu_split", "mmlu_fields"])
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--target-dataset", type=str, default=None)
     parser.add_argument("--n-models-per-chain", type=int, default=None)

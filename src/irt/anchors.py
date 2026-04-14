@@ -70,7 +70,7 @@ def find_anchor_items_clustering(
         weights = np.ones(len(anchor_ids)) / max(len(anchor_ids), 1)
         return anchor_ids, weights
 
-    # Resolve legacy aliases (e.g. efficbench naming)
+    # Resolve legacy method aliases
     method = ANCHOR_METHOD_ALIASES.get(cfg.method, cfg.method)
 
     # Prepare clustering features (X) based on method
@@ -192,11 +192,10 @@ def find_anchor_items_top_k_discrimination(
 ) -> list[str]:
     """Select the top-K items with the highest discrimination parameter (a).
 
-    This is the naive baseline for the reviewer's ablation:
-    "What if you just pick the most discriminative items?"
+    Top-K discrimination baseline (Section 4.2 of the paper).
     Unlike IRT-clustering which spreads coverage across the (a,b) space,
-    this concentrates anchors on the items with highest a — which all tend
-    to cluster near medium difficulty (b ≈ 0), leaving the difficulty axis
+    this concentrates anchors on the items with highest discrimination — which
+    tend to cluster near medium difficulty (b ≈ 0), leaving the difficulty axis
     uncovered and leading to biased estimates for extreme-ability models.
     """
     cfg = config or AnchorConfig()

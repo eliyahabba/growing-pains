@@ -28,9 +28,9 @@ from tqdm import tqdm
 import json
 import torch
 
-from irt.core import create_irt_dataset, train_irt_model_python_api, load_irt_parameters_from_trainer
-from irt.math_utils import estimate_ability_parameters
-from irt.math_utils import item_curve, scenario_from_dataset
+from .core import create_irt_dataset, train_irt_model_python_api, load_irt_parameters_from_trainer
+from .math_utils import estimate_ability_parameters
+from .math_utils import item_curve, scenario_from_dataset
 
 
 def get_best_device() -> str:
@@ -55,7 +55,7 @@ def get_best_device() -> str:
 class TrainingConfig:
     """Configuration matching the notebook parameters exactly."""
     # Core parameters from notebook
-    dims_search: list[int] = field(default_factory=lambda: [2, 5])  # Match efficbench [2, 5]
+    dims_search: list[int] = field(default_factory=lambda: [2, 5])
     device: str = field(default_factory=get_best_device)  # auto-detect best device
     epochs: int = 2000  # Reduced for testing
     lr: float = .1  # Reduced learning rate for stability

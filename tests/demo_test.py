@@ -1,24 +1,17 @@
 """Synthetic validation suite.
 
 --fast   : trains a tiny IRT model on synthetic data, checks MAE is stable
---full   : loads real data from data/input/tinybenchmarks (skips if absent)
+--full   : loads real data from data/input/ (skips if absent)
 """
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-def _ensure_path() -> None:
-    for p in [str(REPO_ROOT), str(REPO_ROOT / "src")]:
-        if p not in sys.path:
-            sys.path.insert(0, p)
 
 
 def _make_synthetic_matrix(n_models: int = 30, n_items: int = 50, seed: int = 0) -> pd.DataFrame:
@@ -37,8 +30,6 @@ def _make_synthetic_matrix(n_models: int = 30, n_items: int = 50, seed: int = 0)
 
 
 def run_fast() -> None:
-    _ensure_path()
-
     from config.constants import LB_DATASETS
     from src.io import round_for_json
 
@@ -48,7 +39,7 @@ def run_fast() -> None:
     assert rounded["nested"]["y"] is None
     assert abs(rounded["x"] - 1.2346) < 1e-4
 
-    from irt import TrainingConfig, fit_2pl_parameters
+    from src.irt import TrainingConfig, fit_2pl_parameters
 
     matrix = _make_synthetic_matrix(n_models=30, n_items=50)
 
@@ -78,10 +69,9 @@ def run_fast() -> None:
 
 
 def run_full() -> None:
-    _ensure_path()
-    tb = REPO_ROOT / "data" / "input" / "tinybenchmarks"
+    tb = REPO_ROOT / "data" / "input"
     if not tb.is_dir() or not any(tb.glob("*.pickle")):
-        print("full: skip (no data/input/tinybenchmarks/*.pickle)")
+        print("full: skip (no data/input/*.pickle)")
         return
     from src.data_loading import ExperimentConfig, load_all_datasets
 

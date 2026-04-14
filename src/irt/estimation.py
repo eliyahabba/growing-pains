@@ -17,7 +17,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from irt.math_utils import item_curve, estimate_ability_parameters, scenario_from_dataset
+from .math_utils import item_curve, estimate_ability_parameters, scenario_from_dataset
 
 # ============================================================================
 # ESTIMATION
@@ -41,8 +41,8 @@ def estimate_theta_from_anchors(
 ) -> float:
     """Estimate ability theta using MLE on 2PL with anchor responses.
     
-    IMPORTANT: For multidimensional IRT, pass A_matrix, B_matrix, and question_ids_order
-    to use the full parameter matrices (like efficbench does).
+    For multidimensional IRT, pass A_matrix, B_matrix, and question_ids_order
+    to use the full MIRT parameter matrices.
     
     Args:
         item_params: DataFrame with IRT parameters indexed by question_id
@@ -73,7 +73,7 @@ def estimate_theta_from_anchors(
     if len(common) == 0:
         raise ValueError("No common anchors between item_params and anchor_responses")
     
-    # Use full matrices if provided (efficbench style)
+    # Use full MIRT matrices if provided
     if A_matrix is not None and B_matrix is not None and question_ids_order is not None:
         qid_to_idx = {qid: i for i, qid in enumerate(question_ids_order)}
         
@@ -373,7 +373,7 @@ def run_estimation_validation(
                 estimated_theta = precomputed_thetas[model_name]
             elif available_anchor_ids:
                 try:
-                    # Use full MIRT matrices for theta estimation (like efficbench)
+                    # Use full MIRT matrices for theta estimation
                     estimated_theta = estimate_theta_from_anchors(
                         item_params, 
                         anchor_responses,
