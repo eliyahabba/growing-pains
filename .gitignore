@@ -8,7 +8,6 @@ dist/
 build/
 data/output/
 *.parquet
-*.pickle
 *.pkl
 .DS_Store
 .venv/
