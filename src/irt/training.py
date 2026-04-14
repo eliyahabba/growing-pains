@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from irt.fit import TrainingConfig, fit_2pl_parameters
+from .fit import TrainingConfig, fit_2pl_parameters
 
 
 def train_item_parameters(

@@ -1,7 +1,7 @@
 import jsonlines
 import numpy as np
 
-from irt.math_utils import item_curve, estimate_ability_parameters
+from .math_utils import item_curve, estimate_ability_parameters
 
 
 def create_irt_dataset(responses, dataset_name, question_ids=None):

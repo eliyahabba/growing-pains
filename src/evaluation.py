@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from irt import compute_lambda_values, run_estimation_validation
+from src.irt import compute_lambda_values, run_estimation_validation
 
 
 def _get_irt_attrs(item_params: pd.DataFrame) -> tuple[dict, int]:
