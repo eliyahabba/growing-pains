@@ -83,10 +83,13 @@ Results are written to `data/output/`. On a SLURM cluster, add `--dispatch sbatc
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{habba2026growing,
-  title={Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration},
-  author={Habba, Eliya and Itzhak, Itay and Yehudai, Asaf and Perlitz, Yotam and Bandel, Elron and Shmueli-Scheuer, Michal and Choshen, Leshem and Stanovsky, Gabriel},
-  journal={arXiv preprint arXiv:2604.12843},
-  year={2026}
+@misc{habba2026growingpainsextensibleefficient,
+      title={Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration}, 
+      author={Eliya Habba and Itay Itzhak and Asaf Yehudai and Yotam Perlitz and Elron Bandel and Michal Shmueli-Scheuer and Leshem Choshen and Gabriel Stanovsky},
+      year={2026},
+      eprint={2604.12843},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2604.12843}, 
 }
 ```
