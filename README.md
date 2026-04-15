@@ -27,8 +27,8 @@ scripts/
   run_experiments.py        orchestrator for anchor count and reference model sweeps
 
 data/
-  input/                    benchmark response files (tracked in git)
-  output/                   experiment results written here (not in git)
+  input/                    benchmark response files
+  output/                   experiment results written here
 
 tests/
   demo_test.py              fast synthetic IRT test + optional real-data test
