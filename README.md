@@ -2,7 +2,7 @@
 
 [![Paper](https://img.shields.io/badge/arXiv-2604.12843-b31b1b.svg)](https://arxiv.org/abs/2604.12843)
 
-Code for the paper "Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration" (Habba et al., 2026, preprint).
+Code for the paper [Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration](https://arxiv.org/abs/2604.12843).
 
 The rapid release of both language models and benchmarks makes it increasingly costly to evaluate every model on every dataset. In practice, models are often evaluated on different samples, making scores difficult to compare across studies. We propose a framework based on multidimensional Item Response Theory (IRT) that uses anchor items to calibrate new benchmarks to the evaluation suite while holding previously calibrated item parameters fixed. In large-scale experiments on more than 400 models, our framework predicts full-evaluation performance within 2–3 percentage points using only 100 anchor questions per dataset, with Spearman ρ ≥ 0.9 for ranking preservation, showing that it is possible to extend benchmark suites over time while preserving score comparability, at a constant evaluation cost per new dataset.
 
