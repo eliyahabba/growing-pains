@@ -1,6 +1,6 @@
 # Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration
 
-[![Paper](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX)
+[![Paper](https://img.shields.io/badge/arXiv-2604.12843-b31b1b.svg)](https://arxiv.org/abs/2604.12843)
 
 Code for the paper "Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration" (Habba et al., 2026, preprint).
 
@@ -86,7 +86,7 @@ If you use this code in your research, please cite:
 @article{habba2026growing,
   title={Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration},
   author={Habba, Eliya and Itzhak, Itay and Yehudai, Asaf and Perlitz, Yotam and Bandel, Elron and Shmueli-Scheuer, Michal and Choshen, Leshem and Stanovsky, Gabriel},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  journal={arXiv preprint arXiv:2604.12843},
   year={2026}
 }
 ```
