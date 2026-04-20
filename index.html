@@ -413,6 +413,53 @@
   @media (max-width: 768px) {
     .contrib-cards { grid-template-columns: 1fr; gap: 1.4rem; }
   }
+
+  /* === Shine effect on publication links === */
+  .publication-links .button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .publication-links .button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: button-shine-initial 2s ease-out 0.5s 1 forwards, button-shine-regular 4s linear 3s infinite;
+    z-index: 1;
+  }
+
+  .publication-links .link-block:nth-child(1) .button::before { animation-delay: 0.2s, 2.2s; }
+  .publication-links .link-block:nth-child(2) .button::before { animation-delay: 0.4s, 2.4s; }
+  .publication-links .link-block:nth-child(3) .button::before { animation-delay: 0.6s, 2.6s; }
+  .publication-links .link-block:nth-child(4) .button::before { animation-delay: 0.8s, 2.8s; }
+  .publication-links .link-block:nth-child(5) .button::before { animation-delay: 1.0s, 3.0s; }
+  .publication-links .link-block:nth-child(6) .button::before { animation-delay: 1.2s, 3.2s; }
+
+  .publication-links .button span {
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes button-shine-initial {
+    0%   { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  @keyframes button-shine-regular {
+    0%   { left: -100%; }
+    50%  { left: -100%; }
+    100% { left: 100%; }
+  }
+
 </style>
 </head>
 <body>
