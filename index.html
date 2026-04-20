@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Growing Pains: Extensible and Efficient LLM Benchmarking via Fixed Parameter Calibration</title>
+  <meta name="description" content="A psychometric framework based on multidimensional Item Response Theory (IRT) for extensible LLM benchmarking. Predicts full-evaluation performance within 2–3% using only 100 anchor questions per dataset." />
+  <meta property="og:title" content="🌱 Growing Pains: Extensible and Efficient LLM Benchmarking via Fixed Parameter Calibration" />
+  <meta property="og:description" content="Integrating new benchmarks without re-evaluating existing models." />
+  <meta property="og:url" content="https://eliyahabba.github.io/growing-pains/" />
+  <meta property="og:image" content="static/images/figure1_pipeline.jpg" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+  <meta name="twitter:title" content="🌱 Growing Pains: Extensible and Efficient LLM Benchmarking">
+  <meta name="twitter:description" content="Integrating new benchmarks without re-evaluating existing models." />
+  <meta name="twitter:image" content="static/images/figure1_pipeline.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="keywords" content="LLM Evaluation, Benchmarking, Item Response Theory, IRT, Fixed Parameter Calibration, Psychometrics">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <!-- MathJax -->
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+  body {
+    font-family: 'Noto Sans', sans-serif;
+    background: #ffffff;
+  }
+  .publication-title, .title {
+    font-family: 'Google Sans', sans-serif;
+  }
+  .publication-title {
+    color: #222;
+  }
+
+  /* Alternating section backgrounds (no dividers) */
+  section.sec-light { background-color: #ffffff; }
+  section.sec-tint  { background-color: #f5f7fa; }
+
+  /* Pink underline under section h2 titles */
+  section.sec-light h2.title.is-3,
+  section.sec-tint  h2.title.is-3 {
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.75rem;
+    margin-bottom: 2rem;
+  }
+  section.sec-light h2.title.is-3::after,
+  section.sec-tint  h2.title.is-3::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: 68px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #ff6b9d 0%, #ff4d6d 100%);
+  }
+  .acronym-explanation {
+    font-size: 0.45em;
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-weight: 400;
+  }
+  .first-letter {
+    color: #000;
+    font-weight: bold;
+  }
+  .subtitle-text {
+    font-size: 0.65em;
+    display: block;
+    margin-top: 8px;
+    line-height: 1.3;
+    font-weight: 400;
+    color: #4a4a4a;
+  }
+
+  .highlight-word {
+    background-color: #d5f5e3;
+    padding: 0 6px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.25);
+  }
+
+  .compact-box {
+    padding: 1.5rem;
+    height: 100%;
+  }
+
+  /* Figures */
+  figure {
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+  figure img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    background: white;
+    padding: 0.5rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Per-figure sizing */
+  img.fig-hero    { max-width: 100%; }
+  img.fig-medium  { max-width: 660px; width: 100%; }
+  img.fig-large   { max-width: 920px; width: 100%; }
+  img.fig-xlarge  { max-width: 980px; width: 100%; }
+  figure.bordered img {
+    border: 1px solid #e5e5e5;
+  }
+  figcaption {
+    font-size: 0.95rem;
+    color: #4a4a4a;
+    margin-top: 0.8rem;
+    line-height: 1.55;
+    text-align: left;
+    max-width: 780px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  figcaption .fig-label {
+    font-weight: 600;
+    color: #222;
+  }
+
+  /* Key stats strip */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0 1rem;
+  }
+  .stat-card {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 1.4rem 1.3rem;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 600;
+    color: #2c7a4b;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .stat-label {
+    font-size: 0.9rem;
+    color: #4a4a4a;
+    line-height: 1.4;
+  }
+
+  /* Contribution cards */
+  .contributions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin: 2.5rem 0 0.5rem;
+  }
+  .contrib-card {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 1.4rem 1.5rem;
+    position: relative;
+  }
+  .contrib-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eaf6ef;
+    color: #2c7a4b;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .contrib-card h4 {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    margin: 0 0 0.5rem;
+    line-height: 1.3;
+  }
+  .contrib-card p {
+    font-size: 0.92rem;
+    color: #4a4a4a;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Equation block */
+  .eqn-box {
+    background: #fafafa;
+    border: 1px solid #eaeaea;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    margin: 1.25rem 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  /* Table */
+  table.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  table.results-table th,
+  table.results-table td {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #efefef;
+  }
+  table.results-table th {
+    background: #f5f7f5;
+    font-weight: 600;
+    color: #222;
+    font-size: 0.88rem;
+  }
+  table.results-table tr:last-child td { border-bottom: none; }
+  table.results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.results-table tr.highlight td {
+    background: #eaf6ef;
+    font-weight: 500;
+  }
+
+  /* BibTeX formatting */
+  pre.bibtex {
+    background: #282c34;
+    color: #abb2bf;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    line-height: 1.55;
+    white-space: pre;
+  }
+
+  /* Method steps — clean numbered flow */
+  .method-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin: 2.5rem 0 2rem;
+    position: relative;
+  }
+  .method-steps::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 12.5%;
+    right: 12.5%;
+    height: 2px;
+    background: linear-gradient(to right, #e5e5e5 0%, #2c7a4b 50%, #e5e5e5 100%);
+    z-index: 0;
+  }
+  .method-step {
+    position: relative;
+    z-index: 1;
+    padding: 0 0.9rem;
+    text-align: center;
+  }
+  .method-step .num {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #2c7a4b;
+    color: #2c7a4b;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 2px 8px rgba(44, 122, 75, 0.15);
+  }
+  .method-step .step-time {
+    font-size: 1.15rem;
+    font-family: 'Google Sans', sans-serif;
+    color: #c94a2e;
+    font-weight: 700;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    min-height: 1.3rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .method-step h4 {
+    font-family: 'Google Sans', sans-serif;
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    line-height: 1.3;
+  }
+  .method-step p {
+    font-size: 0.88rem;
+    color: #4a4a4a;
+    margin: 0;
+    line-height: 1.5;
+  }
+  @media (max-width: 768px) {
+    .method-steps {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    .method-steps::before { display: none; }
+    .method-step { text-align: left; padding: 0; display: flex; gap: 1rem; align-items: flex-start; }
+    .method-step .num { margin: 0; flex-shrink: 0; }
+  }
+
+  /* TL;DR callout */
+  .tldr-box {
+    background: #eaf6ef;
+    border-left: 4px solid #2c7a4b;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1.5rem 0;
+  }
+  .tldr-box .tldr-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #2c7a4b;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .tldr-box p {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  /* Contribution cards */
+  .contrib-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+    margin: 1.5rem 0;
+  }
+  .contrib-card {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 1.5rem 1.4rem;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .contrib-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  }
+  .contrib-card .contrib-num {
+    position: absolute;
+    top: -14px;
+    left: 1.3rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff4d6d 100%);
+    color: white;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(255, 77, 109, 0.3);
+  }
+  .contrib-card h4 {
+    font-family: 'Google Sans', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: #222;
+    margin: 0.4rem 0 0.5rem;
+    line-height: 1.3;
+  }
+  .contrib-card p {
+    font-size: 0.92rem;
+    color: #4a4a4a;
+    margin: 0;
+    line-height: 1.55;
+  }
+  @media (max-width: 768px) {
+    .contrib-cards { grid-template-columns: 1fr; gap: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MAIN HERO -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-2 publication-title">
+            🌱 Growing Pains:
+            <span class="subtitle-text">
+              Extensible and Efficient LLM Benchmarking<br>via Fixed Parameter Calibration
+            </span>
+          </h1>
+
+          <!-- Links -->
+          <div class="publication-links" style="margin-top: 1.5rem;">
+            <span class="link-block">
+              <a href="https://arxiv.org/abs/2604.12843" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="ai ai-arxiv"></i></span>
+                <span>Paper</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="https://github.com/eliyahabba/growing-pains/" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fab fa-github"></i></span>
+                <span>Code</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="#BibTeX" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fas fa-quote-left"></i></span>
+                <span>BibTeX</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <!-- TODO: replace href with the tweet URL once posted -->
+              <a href="#" target="_blank" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fa-brands fa-x-twitter"></i></span>
+                <span>Tweet</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="mailto:eliya.habba@mail.huji.ac.il" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">📧</span>
+                <span>Contact</span>
+              </a>
+            </span>
+          </div>
+
+          <!-- Authors -->
+          <div class="is-size-5 publication-authors" style="margin-top: 1.5rem;">
+            <span class="author-block"><a href="https://eliyahabba.github.io/" target="_blank">Eliya Habba</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="https://itay1itzhak.github.io/" target="_blank">Itay Itzhak</a><sup>1,4</sup>,</span>
+            <span class="author-block"><a href="https://www.semanticscholar.org/author/Asaf-Yehudai/2126416248" target="_blank">Asaf Yehudai</a><sup>2</sup>,</span>
+            <span class="author-block"><a href="https://perlitz.github.io/" target="_blank">Yotam Perlitz</a><sup>2</sup>,</span>
+            <span class="author-block"><a href="https://scholar.google.com/citations?user=K2m6-MYAAAAJ&hl=iw" target="_blank">Elron Bandel</a><sup>2</sup>,</span>
+            <br>
+            <span class="author-block"><a href="https://research.ibm.com/people/michal-shmueli-scheuer" target="_blank">Michal Shmueli-Scheuer</a><sup>2</sup>*,</span>
+            <span class="author-block"><a href="https://ktilana.wixsite.com/leshem-choshen" target="_blank">Leshem Choshen</a><sup>2,3</sup>*,</span>
+            <span class="author-block"><a href="https://gabrielstanovsky.github.io/" target="_blank">Gabriel Stanovsky</a><sup>1,5</sup>*</span>
+            <br>
+            <span class="author-block" style="margin-top: 0.5rem; display: inline-block;">
+              <sup>1</sup>The Hebrew University of Jerusalem &nbsp;·&nbsp;
+              <sup>2</sup>IBM Research &nbsp;·&nbsp;
+              <sup>3</sup>MIT &nbsp;·&nbsp;
+              <sup>4</sup>Technion &nbsp;·&nbsp;
+              <sup>5</sup>Allen Institute for AI
+            </span>
+            <br>
+            <span class="is-size-6 has-text-grey" style="margin-top: 0.4rem; display: inline-block;">*Equal contribution</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEASER FIGURE -->
+<section class="section sec-light" style="padding-top: 1rem;">
+  <div class="container is-max-desktop">
+    <figure>
+      <!-- ▶ PLACE FIGURE 1 HERE: the pipeline diagram (3-panel calibration overview) -->
+      <img src="static/images/figure1_pipeline.jpg" class="fig-hero" alt="Pipeline overview: calibration, sequential integration, and efficient evaluation">
+      <figcaption>
+        <span class="fig-label">Figure 1.</span> Fixed parameter calibration enables extensible evaluation as new benchmarks are added over time.
+        <strong>(1)</strong> Base datasets (e.g., MMLU, GSM8K) are calibrated jointly on reference models to define initial anchor item parameters.
+        <strong>(2)</strong> At each subsequent step <em>t</em>, a new dataset is integrated by estimating its item parameters while holding all previously calibrated anchor parameters fixed (locked icons).
+        <strong>(3)</strong> Once calibrated, the accumulated anchors serve as a compact proxy for the full suite, enabling performance prediction from anchor responses alone.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- TL;DR AND KEY NUMBERS -->
+<section class="section sec-tint">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">TL;DR</h2>
+    <div class="tldr-box">
+      <div class="tldr-label">The problem</div>
+      <p style="margin-bottom: 1rem;">
+        New datasets and new models keep coming, and evaluating every model on every dataset is prohibitively expensive. As benchmark suites grow, models end up tested on different subsets of datasets — so scores are not directly comparable, and rankings shift depending on what you test on.
+      </p>
+      <div class="tldr-label">What we do</div>
+      <p>
+        We treat evaluation as a <strong>growing sequence of benchmarks</strong>: each time a new dataset arrives, we calibrate it into the existing suite by <strong>fixing the parameters of previously calibrated anchor items</strong>. This lets the suite expand without re-running any previously evaluated model, while keeping scores directly comparable across time. With just <strong>100 anchor questions per dataset</strong>, we recover full-suite performance within <strong>2–3%</strong> and preserve rankings (Spearman ρ ≥ 0.9) — at <em>constant</em> per-step cost.
+      </p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num">2–3%</div>
+        <div class="stat-label">Mean absolute error with only 100 anchor questions per dataset</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">≥ 0.9</div>
+        <div class="stat-label">Spearman ρ for ranking preservation versus full evaluation</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">400+</div>
+        <div class="stat-label">Models across Open LLM Leaderboard and MMLU suites</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">Constant</div>
+        <div class="stat-label">Per-step evaluation cost as new datasets are added</div>
+      </div>
+    </div>
+
+    <h3 class="title is-4" style="text-align: center; margin-top: 3rem; margin-bottom: 1.75rem;">Our Contributions</h3>
+    <div class="contrib-cards">
+      <div class="contrib-card">
+        <div class="contrib-num">1</div>
+        <h4>Formulation</h4>
+        <p>We formulate LLM evaluation under evolving dataset coverage as a <strong>scale-linking problem</strong>, where datasets are introduced over time and models are evaluated only on the datasets available at the time of evaluation.</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-num">2</div>
+        <h4>Framework</h4>
+        <p>We introduce a <strong>multidimensional IRT framework with fixed anchor sets and sequential fixed-parameter calibration</strong>, so that results collected at different times can be compared directly.</p>
+      </div>
+      <div class="contrib-card">
+        <div class="contrib-num">3</div>
+        <h4>Empirical evaluation</h4>
+        <p>We show on suites derived from the <strong>Open LLM Leaderboard and MMLU</strong> that this approach provides a cost-effective approximation to full evaluation while largely preserving model rankings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABSTRACT -->
+<section class="section sec-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Abstract</h2>
+    <div class="content">
+      <p>
+        The rapid release of both language models and benchmarks makes it increasingly costly to evaluate every model on every dataset. In practice, models are often evaluated on different samples, making scores difficult to compare across studies.
+      </p>
+      <p>
+        To address this, we propose a framework based on multidimensional Item Response Theory (IRT) that uses anchor items to calibrate new benchmarks to the evaluation suite while holding previously calibrated item parameters fixed. Our approach supports a realistic evaluation setting in which datasets are introduced over time and models are evaluated only on the datasets available at the time of evaluation, while a fixed anchor set for each dataset is used so that results from different evaluation periods can be compared directly.
+      </p>
+      <p>
+        In large-scale experiments on more than 400 models, our framework predicts full-evaluation performance within 2–3 percentage points using only 100 anchor questions per dataset, with Spearman ρ ≥ 0.9 for ranking preservation, showing that it is possible to extend benchmark suites over time while preserving score comparability, at a constant evaluation cost per new dataset.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- BACKGROUND -->
+<section class="section sec-tint">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Background</h2>
+
+    <div class="content">
+      <p>
+        <strong>Item Response Theory (IRT)</strong> models each response as a function of latent model ability and item characteristics. We use the Multidimensional 2-Parameter Logistic variant (MIRT 2PL): a model's ability is a vector $\theta$ over latent dimensions, and the probability of a correct response for item $i$ is
+      </p>
+
+      <div class="eqn-box">
+        $$P(y_i = 1 \mid \theta) = \frac{\exp(\mathbf{a}_i^\top \theta + d_i)}{1 + \exp(\mathbf{a}_i^\top \theta + d_i)}$$
+      </div>
+
+      <p>
+        where $\mathbf{a}_i$ is the item's discrimination vector and $d_i$ its intercept (related to difficulty).
+      </p>
+
+      <p style="margin-top: 1.5rem;">
+        Existing IRT-based evaluation methods use <em>concurrent calibration</em> — jointly re-estimating all parameters every time the benchmark changes. This breaks down as benchmarks evolve: cost scales linearly with model count and benchmark size, and re-estimation shifts the calibration so that historical $\theta$ values stop being comparable.
+      </p>
+
+      <p>
+        Psychometrics offers a fix: <strong>fixed parameter calibration</strong> (FPC). When new items join an existing suite, anchor item parameters are held constant rather than re-estimated. This keeps model abilities $\theta$ comparable across calibration steps. FPC is standard in psychometrics but has not been applied to LLM evaluation.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section class="section sec-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Method</h2>
+    <div class="content">
+      <p>
+        At each time step $t$, we find a set of representative anchors for the newly added dataset and keep them fixed thereafter.
+      </p>
+    </div>
+
+    <div class="method-steps">
+      <div class="method-step">
+        <div class="num">1</div>
+        <div class="step-time"><em>t</em> = 0</div>
+        <h4>Train initial IRT model</h4>
+        <p>Fit MIRT 2PL on the first dataset $B_0$ using responses from reference models $M_{\mathrm{ref}}$.</p>
+      </div>
+      <div class="method-step">
+        <div class="num">2</div>
+        <div class="step-time">&nbsp;</div>
+        <h4>Select anchors</h4>
+        <p>Cluster IRT item representations and pick the most representative item per cluster.</p>
+      </div>
+      <div class="method-step">
+        <div class="num">3</div>
+        <div class="step-time"><em>t</em> &gt; 0</div>
+        <h4>Calibrate new benchmark</h4>
+        <p>Fit parameters for $B_t$ while holding all existing anchor parameters fixed.</p>
+      </div>
+      <div class="method-step">
+        <div class="num">4</div>
+        <div class="step-time">&nbsp;</div>
+        <h4>Evaluate a new model</h4>
+        <p>Estimate $\hat{\theta}$ from responses to the accumulated anchors, then predict accuracy on the full suite.</p>
+      </div>
+    </div>
+
+    <div class="content">
+      <p>
+        Formally, at step $t$ we estimate ability from the cumulative anchor set $A_{\leq t} = A_0 \cup \cdots \cup A_t$:
+      </p>
+      <div class="eqn-box">
+        $$\hat{\theta} = \arg\max_{\theta} \prod_{i \in A_{\leq t}} P(y_i \mid \theta; \mathbf{a}_i, d_i)$$
+      </div>
+      <p>
+        This requires only $|A_{\leq t}|$ evaluations per model, rather than running on the entire suite.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIMENTAL SETUP -->
+<section class="section sec-tint">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Experimental Setup</h2>
+    <div class="content">
+      <p>We evaluate our framework on two benchmark suites, using randomized sequential ordering to simulate sequential benchmark addition over time.</p>
+
+      <div style="overflow-x: auto;">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Benchmark Suite</th>
+              <th class="num"># Models</th>
+              <th class="num"># Datasets</th>
+              <th>Included Datasets</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Open LLM Leaderboard</strong></td>
+              <td class="num">395</td>
+              <td class="num">6</td>
+              <td>ARC Challenge, GSM8K, HellaSwag, MMLU, TruthfulQA, Winogrande</td>
+            </tr>
+            <tr>
+              <td><strong>MMLU</strong></td>
+              <td class="num">428</td>
+              <td class="num">57</td>
+              <td>57 subject subdomains (algebra, law, medical genetics, …)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="title is-4" style="margin-top: 2rem;">Baselines</h3>
+      <ul>
+        <li><strong>Concurrent calibration</strong> — jointly re-estimates all item parameters and model abilities each time a new benchmark is added, without constraining any to prior values.</li>
+        <li><strong>Random sampling</strong> — estimates performance by directly averaging accuracy on a randomly drawn subset of $N$ questions from the newly added dataset, without any IRT modeling.</li>
+      </ul>
+
+      <h3 class="title is-4">Dataset chain construction</h3>
+      <p>
+        To simulate the gradual accumulation of datasets over time, we define a <em>chain</em>: a sequence of datasets added one at a time to an initial suite. At each subsequent step $t$, one dataset is added and integrated via calibration; we then predict each test model's accuracy on the newly added dataset and compare against its full-evaluation accuracy. Because we evaluate prediction quality at every step along the chain, each chain yields measurements at increasing chain lengths, allowing us to test whether prediction error accumulates as more benchmarks are added.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="section sec-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Results</h2>
+
+    <h3 class="title is-4">Prediction error remains low as the benchmark suite grows</h3>
+    <div class="content">
+      <p>
+        Fixed parameter calibration provides strong predictive performance. Its MAE remains low and stable across chain steps on both the Open LLM Leaderboard and MMLU, closely tracking concurrent calibration while consistently outperforming random sampling, especially at smaller anchor budgets.
+      </p>
+    </div>
+
+    <figure>
+      <!-- ▶ PLACE FIGURE 2 HERE: MAE % vs. Number of Questions, Open LLM Leaderboard, 100 anchors -->
+      <img src="static/images/figure2_cost_openllm.jpg" class="fig-medium" alt="Fixed parameter calibration at constant cost vs. concurrent calibration's growing cost">
+      <figcaption>
+        <span class="fig-label">Figure 2.</span> Fixed parameter calibration maintains low prediction error at <em>constant</em> evaluation cost as the benchmark suite grows (Open LLM Leaderboard, 100 anchors per dataset). Concurrent calibration's cost grows linearly as it re-evaluates all accumulated anchors, with no corresponding improvement in accuracy. Random sampling shares the constant cost of fixed parameter calibration but incurs consistently higher prediction error.
+      </figcaption>
+    </figure>
+
+    <h3 class="title is-4" style="margin-top: 2.5rem;">A small anchor budget suffices</h3>
+    <div class="content">
+      <p>
+        Across both benchmark suites, even compact sets (e.g., $N = 10$ or $25$) allow fixed parameter calibration and concurrent calibration to maintain low and stable MAE. As the number of anchors increases, random sampling approaches the performance of IRT-based methods, narrowing the gap between all three approaches.
+      </p>
+    </div>
+
+    <figure>
+      <!-- ▶ FIGURE 3: shown as two separate dataset panels -->
+      <img src="static/images/figure3_anchors_openllm.jpg" class="fig-large" alt="Prediction error across chain steps on Open LLM Leaderboard with varying anchor budgets">
+      <img src="static/images/figure3_anchors_mmlu.jpg" class="fig-large" alt="Prediction error across chain steps on MMLU with varying anchor budgets" style="margin-top: 1.25rem;">
+      <figcaption>
+        <span class="fig-label">Figure 3.</span> A small anchor budget suffices for accurate prediction across chain steps, with diminishing returns from larger sets. Here the figure is shown in two stacked panels: the <strong>upper panel</strong> shows the Open LLM Leaderboard, and the <strong>lower panel</strong> shows MMLU. In both suites, even compact anchor sets allow fixed parameter calibration and concurrent calibration to maintain low and stable MAE, while random sampling approaches them only as the anchor budget grows. Shaded regions denote 95% confidence intervals.
+      </figcaption>
+    </figure>
+
+    <div class="content" style="margin-top: 2rem;">
+      <p>
+        To put these numbers in perspective: <strong>100 anchors per dataset is a tiny slice of each benchmark.</strong> On HellaSwag that's 1% of items; on MMLU, under 1%. Even the smallest benchmarks stay under 12%.
+      </p>
+    </div>
+
+    <div class="columns is-desktop" style="margin-top: 1rem;">
+      <div class="column is-half">
+        <h4 class="has-text-weight-semibold has-text-centered" style="margin-bottom: 0.6rem; color: #4a4a4a; font-size: 0.95rem;">Open LLM Leaderboard</h4>
+        <div style="overflow-x: auto;">
+          <table class="results-table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Dataset</th>
+                <th class="num">Total</th>
+                <th class="num">N=50</th>
+                <th class="num">N=100</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>ARC Challenge</td><td class="num">1,212</td><td class="num">4.1%</td><td class="num">8.3%</td></tr>
+              <tr><td>GSM8K</td><td class="num">1,359</td><td class="num">3.7%</td><td class="num">7.4%</td></tr>
+              <tr><td>HellaSwag</td><td class="num">10,082</td><td class="num">0.5%</td><td class="num">1.0%</td></tr>
+              <tr><td>MMLU</td><td class="num">14,042</td><td class="num">0.4%</td><td class="num">0.7%</td></tr>
+              <tr><td>TruthfulQA</td><td class="num">857</td><td class="num">5.8%</td><td class="num">11.7%</td></tr>
+              <tr><td>Winogrande</td><td class="num">1,307</td><td class="num">3.8%</td><td class="num">7.7%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="column is-half">
+        <h4 class="has-text-weight-semibold has-text-centered" style="margin-bottom: 0.6rem; color: #4a4a4a; font-size: 0.95rem;">MMLU (representative subjects)</h4>
+        <div style="overflow-x: auto;">
+          <table class="results-table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th class="num">Total</th>
+                <th class="num">N=10</th>
+                <th class="num">N=50</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Abstract Algebra</td><td class="num">100</td><td class="num">10.0%</td><td class="num">50.0%</td></tr>
+              <tr><td>Computer Security</td><td class="num">100</td><td class="num">10.0%</td><td class="num">50.0%</td></tr>
+              <tr><td>Machine Learning</td><td class="num">112</td><td class="num">8.9%</td><td class="num">44.6%</td></tr>
+              <tr><td>College Medicine</td><td class="num">173</td><td class="num">5.8%</td><td class="num">28.9%</td></tr>
+              <tr><td>High School Math</td><td class="num">270</td><td class="num">3.7%</td><td class="num">18.5%</td></tr>
+              <tr><td>Moral Scenarios</td><td class="num">895</td><td class="num">1.1%</td><td class="num">5.6%</td></tr>
+              <tr><td>Professional Law</td><td class="num">1,534</td><td class="num">0.7%</td><td class="num">3.3%</td></tr>
+              <tr class="highlight"><td><strong>Total</strong></td><td class="num"><strong>14,042</strong></td><td class="num"><strong>4.1%</strong></td><td class="num"><strong>20.3%</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <p class="has-text-grey" style="font-size: 0.86rem; margin-top: -0.25rem;">Anchor coverage as a percentage of total items. $N$ denotes the number of anchor questions per benchmark.</p>
+
+    <h3 class="title is-4" style="margin-top: 2.5rem;">Model rankings are well preserved</h3>
+    <div class="content">
+      <p>
+        Beyond absolute error, the approximation methods also recover the relative ordering of models well. IRT-based approaches match or improve upon random sampling across configurations, with the clearest gains at low anchor counts. As the anchor budget grows, all methods move toward near-perfect ranking estimation.
+      </p>
+
+      <div style="overflow-x: auto; margin-top: 1rem;">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th rowspan="2">Method</th>
+              <th colspan="3" style="text-align: center;">Open LLM Leaderboard</th>
+              <th colspan="4" style="text-align: center;">MMLU</th>
+            </tr>
+            <tr>
+              <th class="num">N=25</th><th class="num">N=100</th><th class="num">N=200</th>
+              <th class="num">N=10</th><th class="num">N=25</th><th class="num">N=50</th><th class="num">N=100</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Random</td>
+              <td class="num">0.82</td><td class="num">0.91</td><td class="num">0.96</td>
+              <td class="num">0.68</td><td class="num">0.85</td><td class="num">0.91</td><td class="num">0.98</td>
+            </tr>
+            <tr>
+              <td>Concurrent Calibration</td>
+              <td class="num">0.89</td><td class="num">0.94</td><td class="num">0.97</td>
+              <td class="num">0.73</td><td class="num">0.83</td><td class="num">0.90</td><td class="num">0.98</td>
+            </tr>
+            <tr class="highlight">
+              <td>Fixed Parameter Calibration</td>
+              <td class="num">0.88</td><td class="num">0.94</td><td class="num">0.97</td>
+              <td class="num">0.72</td><td class="num">0.84</td><td class="num">0.90</td><td class="num">0.98</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="has-text-grey" style="font-size: 0.88rem;">Ranking preservation (Spearman ρ) between predicted and full-evaluation model orderings.</p>
+    </div>
+
+    <h3 class="title is-4" style="margin-top: 2.5rem;">Clustering-based anchor selection matters</h3>
+    <div class="content">
+      <p>
+        To test whether the clustering-based anchor selection is necessary, we replace it with a top-K baseline that selects items with the highest discrimination parameter, keeping the rest of the pipeline identical. Top-K selection produces substantially higher MAE. Clustering distributes anchors across the full difficulty and discrimination space, while top-K concentrates them in a narrow high-discrimination region. Representative coverage of the item space — not just high discrimination — is necessary for accurate prediction.
+      </p>
+    </div>
+
+    <figure>
+      <!-- ▶ PLACE FIGURE 4 HERE: Top-K Discrimination vs. Fixed Parameter Calibration, MAE across chain steps (Open LLM Leaderboard) -->
+      <img src="static/images/figure4_topk_openllm.jpg" class="fig-medium" alt="Top-K selection vs. clustering-based fixed parameter calibration">
+      <figcaption>
+        <span class="fig-label">Figure 4.</span> Replacing the clustering-based anchor selection with top-K selection by discrimination parameter leads to substantially higher MAE on the Open LLM Leaderboard, while the rest of the fixed parameter calibration pipeline remains identical.
+      </figcaption>
+    </figure>
+
+    <h3 class="title is-4" style="margin-top: 2.5rem;">Accurate approximation requires dozens of reference models</h3>
+    <div class="content">
+      <p>
+        Approximation quality depends on the number of reference models: a very small set is insufficient for low prediction error. On the Open LLM Leaderboard, using only 25 reference models produces unstable error profiles, while performance becomes reliable once the pool reaches roughly 100 models. On MMLU, 25 reference models already yield robust performance, but the broader pattern is the same: accurate approximation requires at least dozens of reference models.
+      </p>
+    </div>
+
+    <figure>
+      <!-- ▶ FIGURE 5: shown as two separate dataset panels -->
+      <img src="static/images/figure5_refmodels_openllm.jpg" class="fig-large" alt="Effect of reference model count on Open LLM Leaderboard">
+      <img src="static/images/figure5_refmodels_mmlu.jpg" class="fig-large" alt="Effect of reference model count on MMLU" style="margin-top: 1.25rem;">
+      <figcaption>
+        <span class="fig-label">Figure 5.</span> The effect of reference model count varies across suites. Here the figure is shown in two stacked panels: the <strong>upper panel</strong> shows the Open LLM Leaderboard, and the <strong>lower panel</strong> shows MMLU. On the Open LLM Leaderboard, reliable fixed parameter calibration is only achieved once the reference pool reaches roughly <strong>100 or more models</strong>. On MMLU, prediction quality is more stable even with fewer reference models, though the broader pattern is the same: accurate approximation requires at least dozens of reference models.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- APPENDIX / ANCHOR ITEM MAPS -->
+<section class="section sec-tint">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Additional Results: Anchor Item Maps</h2>
+    <div class="content">
+      <p>
+        Item maps plot each item's difficulty ($b$) against its discrimination ($a$). Across all datasets, clustering-based selection distributes anchors across the full parameter space, while top-K selection concentrates them in a narrow high-discrimination region — explaining the higher prediction error observed above.
+      </p>
+    </div>
+
+    <figure class="bordered">
+      <!-- ▶ PLACE FIGURE 6 HERE: 3x3 grid of item maps, representative MMLU subjects -->
+      <img src="static/images/figure4_topk_mmlu.jpg" class="fig-medium" alt="Item maps for representative MMLU subjects">
+      <figcaption>
+        <span class="fig-label">Figure 6.</span> Item maps for representative MMLU subjects. Clustering-based selection (circles) distributes anchors across the full parameter space, while top-K selection (diamonds) concentrates them in a narrow high-discrimination region.
+      </figcaption>
+    </figure>
+
+    <figure style="margin-top: 2.5rem;">
+      <!-- ▶ PLACE FIGURE 7 HERE: Top-K vs. FPC on MMLU (the MMLU counterpart of Figure 4) -->
+      <img src="static/images/figure7_topk_mmlu.jpg" class="fig-medium" alt="Top-K vs. fixed parameter calibration on MMLU">
+      <figcaption>
+        <span class="fig-label">Figure 7.</span> Top-K selection leads to substantially higher MAE on MMLU, confirming the pattern seen on the Open LLM Leaderboard.
+      </figcaption>
+    </figure>
+
+    <figure class="bordered" style="margin-top: 2.5rem;">
+      <!-- ▶ PLACE FIGURE 8 HERE: 2x3 grid of item maps, all Open LLM Leaderboard datasets -->
+      <img src="static/images/figure7_topk_openllm.jpg" class="fig-medium" alt="Item maps for Open LLM Leaderboard datasets">
+      <figcaption>
+        <span class="fig-label">Figure 8.</span> Item maps for all Open LLM Leaderboard datasets. The same pattern holds: clustering spreads anchors across the item space, top-K concentrates them.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- BIBTEX -->
+<section class="section sec-light" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title is-3">Citation</h2>
+    <pre class="bibtex"><code>@misc{habba2026growingpainsextensibleefficient,
+      title={Growing Pains: Extensible and Efficient LLM Benchmarking Via Fixed Parameter Calibration},
+      author={Eliya Habba and Itay Itzhak and Asaf Yehudai and Yotam Perlitz and Elron Bandel and Michal Shmueli-Scheuer and Leshem Choshen and Gabriel Stanovsky},
+      year={2026},
+      eprint={2604.12843},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2604.12843},
+}</code></pre>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer" style="background-color: #f5f7fa; padding: 2rem 1.5rem;">
+  <div class="container is-max-desktop has-text-centered">
+    <p class="has-text-grey">
+      A collaboration between <strong>The Hebrew University of Jerusalem</strong> and <strong>IBM Research</strong>,
+      supported by the IBM-HUJI Research collaboration.
+    </p>
+    <p class="has-text-grey" style="margin-top: 0.6rem;">
+      <a href="https://github.com/eliyahabba/growing-pains/">github.com/eliyahabba/growing-pains</a>
+      &nbsp;·&nbsp;
+      <a href="mailto:eliya.habba@mail.huji.ac.il">eliya.habba@mail.huji.ac.il</a>
+    </p>
+    <p class="has-text-grey is-size-7" style="margin-top: 1rem;">
+      Page template adapted from
+      <a href="https://nerfies.github.io/">Nerfies</a>.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
